@@ -1,0 +1,5 @@
+{
+    "sketch": "stm32_rotary_encoder.ino",
+    "configuration": "cpu=atmega328",
+    "board": "arduino:avr:nano"
+}
