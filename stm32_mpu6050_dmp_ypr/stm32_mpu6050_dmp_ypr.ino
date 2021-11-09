@@ -2,13 +2,10 @@
 
 #include "MPU6050_6Axis_MotionApps20.h"
 
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
 #include "Wire.h"
-#endif
 
 MPU6050 mpu; //0x68 address
 
-#define OUTPUT_READABLE_YAWPITCHROLL
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -22,30 +19,15 @@ float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravit
 
 void setup()
 {
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+
   Wire.begin();
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-#elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-  Fastwire::setup(400, true);
-#endif
+
 
   Serial1.begin(9600);
 
-  Serial1.println(F("Initializing I2C devices..."));
+
   mpu.initialize();
-
-  // verify connection
-  Serial1.println(F("Testing device connections..."));
-  Serial1.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-
-  // wait for ready
-  Serial1.println(F("\nSend any character to begin DMP programming and demo: "));
-  while (Serial1.available() && Serial1.read()); // empty buffer
-  while (!Serial1.available()); // wait for data
-  while (Serial1.available() && Serial1.read()); // empty buffer again
-
-  // load and configure the DMP
-  Serial1.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
@@ -61,9 +43,7 @@ void setup()
     mpu.CalibrateAccel(6);
     mpu.CalibrateGyro(6);
     mpu.PrintActiveOffsets();
-    
-    // turn on the DMP, now that it's ready
-    Serial1.println(F("Enabling DMP..."));
+
     mpu.setDMPEnabled(true);
     dmpReady = true;
   }

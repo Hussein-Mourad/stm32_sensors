@@ -1,15 +1,17 @@
 #include <ros.h>
-#include <std_msgs/String.h>
+#include <std_msgs/Int32.h>
 
-#define SIGNAL_A 2
-#define SIGNAL_B 3
+#define SIGNAL_A PB12
+#define SIGNAL_B PB13
 
-long long int  counter = 0;
+long  counter = 0;
 ros::NodeHandle nh;
-std_msgs::String str_msg;
+std_msgs::Int32 str_msg;
 ros::Publisher encoder_counter("encoder_counter", &str_msg);
 void setup()
 {
+  (nh.getHardware())->setPort(&Serial1);
+  (nh.getHardware())->setBaud(115200);
   nh.initNode();
   nh.advertise(encoder_counter);
   pinMode(SIGNAL_A, INPUT_PULLUP);
@@ -20,9 +22,11 @@ void setup()
 
 void loop()
 {
-  char buf[100];
-  sprintf(buf, "%lld", counter);
-  str_msg.data = buf;
+//  char buf[100];
+//  sprintf(buf, "%lld", counter);
+//  str_msg.data = buf;
+  
+  str_msg.data = counter;
   encoder_counter.publish( &str_msg );
   nh.spinOnce();
   delay(1000);
