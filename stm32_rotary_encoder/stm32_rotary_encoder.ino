@@ -4,16 +4,21 @@
 #define SIGNAL_A PB12
 #define SIGNAL_B PB13
 
-long  counter = 0;
+#define TOPIC_NAME "encoder_count"
+
+long  encoderCounter = 0;
+
 ros::NodeHandle nh;
-std_msgs::Int32 str_msg;
-ros::Publisher encoder_counter("encoder_counter", &str_msg);
+std_msgs::Int32 message;
+ros::Publisher publisher(TOPIC_NAME, &message);
+
 void setup()
 {
   (nh.getHardware())->setPort(&Serial1);
   (nh.getHardware())->setBaud(115200);
   nh.initNode();
-  nh.advertise(encoder_counter);
+  nh.advertise(publisher);
+
   pinMode(SIGNAL_A, INPUT_PULLUP);
   pinMode(SIGNAL_B, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(SIGNAL_A), ISR_A, CHANGE);
@@ -22,36 +27,19 @@ void setup()
 
 void loop()
 {
-//  char buf[100];
-//  sprintf(buf, "%lld", counter);
-//  str_msg.data = buf;
-  
-  str_msg.data = counter;
-  encoder_counter.publish( &str_msg );
+  message.data = encoderCounter;
+  publisher.publish(&message);
   nh.spinOnce();
   delay(1000);
 }
 
 void ISR_A()
 {
-  if (digitalRead(SIGNAL_A) != digitalRead(SIGNAL_B))
-  {
-    counter++;
-  }
-  else
-  {
-    counter--;
-  }
+  digitalRead(SIGNAL_A) != digitalRead(SIGNAL_B) ? encoderCounter++ : encoderCounter--;
+
 }
 
 void ISR_B()
 {
-  if (digitalRead(SIGNAL_A) == digitalRead(SIGNAL_B))
-  {
-    counter++;
-  }
-  else
-  {
-    counter--;
-  }
+  digitalRead(SIGNAL_A) == digitalRead(SIGNAL_B) ? encoderCounter++ : encoderCounter--;
 }

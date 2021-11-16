@@ -1,11 +1,14 @@
 #include "I2Cdev.h"
-
 #include "MPU6050_6Axis_MotionApps20.h"
-
 #include "Wire.h"
+#include <ros.h>
+#include <std_msgs/Float32.h>
+
+#define TOPIC_NAME "yaw_kalman_filter"
+
+// #define DEBUG
 
 MPU6050 mpu; //0x68 address
-
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -17,15 +20,23 @@ Quaternion q;        // [w, x, y, z]         quaternion container
 VectorFloat gravity; // [x, y, z]            gravity vector
 float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
+ros::NodeHandle nodeHandle;
+std_msgs::Float32 yawAngle;
+ros::Publisher publisher(TOPIC_NAME, &yawAngle);
+
 void setup()
 {
+  (nodeHandle.getHardware())->setPort(&Serial1);
+  (nodeHandle.getHardware())->setBaud(115200);
+  nodeHandle.initNode();
+  nodeHandle.advertise(publisher);
 
   Wire.begin();
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
-
-  Serial1.begin(9600);
-
+#ifdef DEBUG
+  Serial3.begin(9600);
+#endif
 
   mpu.initialize();
   devStatus = mpu.dmpInitialize();
@@ -53,10 +64,13 @@ void setup()
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
     // (if it's going to break, usually the code will be 1)
-    Serial1.print(F("DMP Initialization failed (code "));
-    Serial1.print(devStatus);
-    Serial1.println(F(")"));
+#ifdef DEBUG
+    Serial3.print(F("DMP Initialization failed (code "));
+    Serial3.print(devStatus);
+    Serial3.println(F(")"));
+#endif
   }
+
 }
 
 void loop()
@@ -69,11 +83,19 @@ void loop()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    Serial1.print("ypr\t");
-    Serial1.print(ypr[0] * 180 / M_PI);
-    Serial1.print("\t");
-    Serial1.print(ypr[1] * 180 / M_PI);
-    Serial1.print("\t");
-    Serial1.println(ypr[2] * 180 / M_PI);
+
+    yawAngle.data = ypr[0] * 180 / M_PI;
+    publisher.publish(&yawAngle);
+
+#ifdef DEBUG
+    Serial3.print("ypr\t");
+    Serial3.print(ypr[0] * 180 / M_PI);
+    Serial3.print("\t");
+    Serial3.print(ypr[1] * 180 / M_PI);
+    Serial3.print("\t");
+    Serial3.println(ypr[2] * 180 / M_PI);
+#endif
+
   }
+  nodeHandle.spinOnce();
 }
