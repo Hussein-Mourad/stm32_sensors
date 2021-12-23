@@ -6,7 +6,8 @@
 
 #define TOPIC_NAME "yaw_kalman_filter"
 
-// #define DEBUG
+HardwareSerial Serial3(PB11, PB10);
+#define DEBUG
 
 MPU6050 mpu; //0x68 address
 
@@ -20,14 +21,14 @@ Quaternion q;        // [w, x, y, z]         quaternion container
 VectorFloat gravity; // [x, y, z]            gravity vector
 float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
-ros::NodeHandle nodeHandle;
+ros::NodeHandle_<ArduinoHardware, 10, 10, 2048, 2048> nodeHandle;
 std_msgs::Float32 yawAngle;
 ros::Publisher publisher(TOPIC_NAME, &yawAngle);
 
 void setup()
 {
-  (nodeHandle.getHardware())->setPort(&Serial1);
-  (nodeHandle.getHardware())->setBaud(115200);
+  (nodeHandle.getHardware())->setPort(&Serial3);
+  (nodeHandle.getHardware())->setBaud(57600);
   nodeHandle.initNode();
   nodeHandle.advertise(publisher);
 
@@ -35,7 +36,7 @@ void setup()
   Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
 
 #ifdef DEBUG
-  Serial3.begin(9600);
+  Serial3.begin(115200);
 #endif
 
   mpu.initialize();
@@ -98,4 +99,5 @@ void loop()
 
   }
   nodeHandle.spinOnce();
+  delay(1000);
 }
